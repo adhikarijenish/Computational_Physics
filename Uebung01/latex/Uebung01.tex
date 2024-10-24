@@ -1,29 +1,36 @@
-\documentclass[a4]{scrartcl}
+\documentclass[titlepage]{scrartcl}
 
 \usepackage{newtxmath}
 \usepackage{graphicx}
 \usepackage{amsmath}
+\usepackage{anyfontsize}
 
 
+\graphicspath{{../plot/}}
 \KOMAoptions{DIV=10}
+\KOMAoptions{fontsize=11pt,paper=a4}
 
 
 % End der Präambel
-
 \title{First Exercise}
 \author{Jenish Adhikari}
 \date{\today}
 
 \begin{document}
+\pagenumbering{roman}
 \maketitle
 \tableofcontents
+\clearpage
+\newpage
+\pagenumbering{arabic}
 
 \section{One big experiment:}
 
-
-
-
-
+\begin{figure}[htp]
+    \centering
+    \includegraphics[width=\textwidth]{One_Big_Experiment.png}
+    \caption[OBE]{One Big Experiment}
+\end{figure}
 
 
 \end{document}
