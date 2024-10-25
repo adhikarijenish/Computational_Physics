@@ -1,2 +1,0 @@
-\contentsline {section}{\numberline {1}One big experiment:}{1}{}%
-\providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 

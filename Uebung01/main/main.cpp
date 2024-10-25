@@ -32,7 +32,6 @@ int main(int argc, char *argv[]){
     double estamator;
 
     GetUserParam(argc,argv,filename,Pairs,X,save);
-
     if(save){
         file.open(filename);
     }
@@ -63,7 +62,8 @@ int main(int argc, char *argv[]){
         radius.clear();
 
     
-        if(file.is_open()){file.close();}
+        if(file.is_open()){
+            file.close();}
 
     }
     return 0;

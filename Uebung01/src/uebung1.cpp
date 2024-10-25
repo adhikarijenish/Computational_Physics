@@ -37,7 +37,7 @@ void GetUserParam( int argc, char *argv[],std::string & filename, int & Pairs, i
     int i;
     char* endptr;
     const char usage[] = 
-        "boundary [-f <File Name> -p <Pairs> -x <Experiment> -s <Save Radius>]";
+        "boundary [-f <File Name> -p <Pairs> -x <Experiment> -s <Save Radius {0/1}>]";
     const char error_message[] =
         "# FEHLER(GetuserParam): falsche Option: ";
 
@@ -59,7 +59,7 @@ void GetUserParam( int argc, char *argv[],std::string & filename, int & Pairs, i
                         
                         break;
                     case 's':
-                        save = argv[++i] == "True";
+                        save = strtod( argv[++i], &endptr);
                         
                         break;
                     default:

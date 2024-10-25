@@ -1,9 +1,11 @@
 
 all:
 	make -Cmain
-	make -Cbuild
-	#make -Cplot
-	#make -Clatex pdf clean
+	make -Cbuild all
+	make -Cplot plot 
+	make -Clatex pdf 
 
 clean:
-	rm -f nothing
+	make -Cbuild clean
+	make -Cplot clean 
+	make -Clatex clean
