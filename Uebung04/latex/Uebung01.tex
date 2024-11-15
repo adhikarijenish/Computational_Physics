@@ -1,0 +1,54 @@
+\documentclass[titlepage]{scrartcl}
+
+\usepackage{newtxmath}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{anyfontsize}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{subcaption}
+\usepackage[ISO]{diffcoeff}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue}
+\usepackage[USenglish,american]{babel}
+
+
+\graphicspath{{../plot/}}
+\KOMAoptions{DIV=10}
+\KOMAoptions{fontsize=11pt,paper=a4}
+
+
+% Ende der Präambel
+\title{First Exercise}
+\author{Jenish Adhikari \\ \url{https://github.com/adhikarijenish/Computational_Physics.git}}
+\date{\today}
+
+\begin{document}
+\pagenumbering{roman}
+\maketitle
+\tableofcontents
+\clearpage
+\newpage
+\pagenumbering{arabic}
+\section{The Ising Model in 1D}
+The exect solution in $1D$
+\begin{align*}
+    Z[\beta,J,h] &= \lambda_+^N + \lambda_-^N \\
+    \lambda_{\pm} &= e^{J/T}\left( \cosh(h/T)\pm \sqrt{\sinh(h/T)^2+ e^{-4J/T}}\right)\\
+    &\text{can be written in}\\
+    & h \to H/\beta \text{ and } J \to j/\beta\\
+    Z[j,H] &= \lambda_+^N + \lambda_-^N \\ \text{with} \\
+    \lambda_{\pm} &= e^{j}\left( \cosh(H)\pm \sqrt{\sinh(H)^2+ e^{-4j}}\right)
+\end{align*}
+now the net magnetization $M$ is given by
+\begin{align*}
+    <M> &= \frac{1}{\beta}\diffp*{\log Z[\beta,J,h]}{h} \to \\
+    <M> &= \diffp*{\log Z[j,H]}{H}\\
+    &= \frac{1}{Z[j,H]} \diffp*{ Z[j,H]}{H}\\
+    &= \frac{1}{Z[j,H]} N \left( \lambda_+^{N-1} \diffp*{\lambda_+}{H}
+    + \lambda_-^{N-1} \diffp*{\lambda_-}{H} \right) \\
+    \text{with}      \\
+    \diffp*{\lambda_\pm}{H} &= e^j \left(\pm \frac{\sinh(H)\cosh(H)}
+    {\sqrt{\sinh(H)^2 + e^{-4j}}} -\sinh(H)\right)
+\end{align*}
+
+\end{document}
