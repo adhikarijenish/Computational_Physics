@@ -9,4 +9,8 @@ to erase unnecessary file run
 
 make clean
 
+For exercise four only file inside plot is relevant and pdf can be generated form latex. Pdf has derivative of Z. That's all.
+
+
+
 
