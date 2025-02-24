@@ -20,7 +20,7 @@ complex fermion_dagger(const std::vector<std::vector<std::vector<complex>>> & U_
 std::vector<std::vector<std::vector<complex>>> f_M(const std::vector<std::vector<std::vector<complex>>> & Phi,const std::vector<std::vector<std::vector<complex>>> & U_gauge,const double m0);
 std::vector<std::vector<std::vector<complex>>> f_Mdag(const std::vector<std::vector<std::vector<complex>>> & Phi,const std::vector<std::vector<std::vector<complex>>> & U_gauge,const double m0);
 std::vector<std::vector<std::vector<complex>>> f_M_f_Mdag(const std::vector<std::vector<std::vector<complex>>> & Phi,const std::vector<std::vector<std::vector<complex>>> & U_gauge,const double m0);
-double normsquared(const std::vector<std::vector<std::vector<complex>>> & psi);
+std::vector<double> normsquared(const std::vector<std::vector<std::vector<complex>>> & psi);
 std::vector<double> scalar_product(std::vector<std::vector<std::vector<complex>>> p, std::vector<std::vector<std::vector<complex>>> t);
 void assign_add_mul(std::vector<std::vector<std::vector<complex>>> &x,const std::vector<std::vector<std::vector<complex>>> &p,const std::vector<double> alpha);
 void assign_mul_add(std::vector<std::vector<std::vector<complex>>> &p,const std::vector<std::vector<std::vector<complex>>> &r,const std::vector<double> beta);

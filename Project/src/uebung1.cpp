@@ -132,16 +132,16 @@ complex fermion_dagger(const std::vector<std::vector<std::vector<complex>>> & U_
     out = complex((m0+2)*delta_f(alpha,beta)*delta_f(n_prime,n),0.0);
 
     new_n_prime[mu] = n_prime[mu]+1;
-    out -=0.5*(complex(1.0,0.0)-std::conj(sigma[mu][alpha][beta]))*std::conj(U_gauge[x][y][mu])*complex(delta_f(new_n_prime,n),0.0);
+    out -=0.5*(complex(1.0,0.0)-sigma[mu][alpha][beta])*std::conj(U_gauge[x][y][mu])*complex(delta_f(new_n_prime,n),0.0);
     new_n_prime = n_prime;
     new_n_prime[mu] = n_prime[mu]-1;
-    out -=0.5*(complex(1.0,0.0)+std::conj(sigma[mu][alpha][beta]))*U_gauge[(x_p-1+L)%L][y_p][mu]*complex(delta_f(new_n_prime,n),0.0);
+    out -=0.5*(complex(1.0,0.0)+sigma[mu][alpha][beta])*U_gauge[(x_p-1+L)%L][y_p][mu]*complex(delta_f(new_n_prime,n),0.0);
     new_n_prime = n_prime;
     new_n_prime[nu] = n_prime[nu]+1;
-    out -=0.5*(complex(1.0,0.0)-std::conj(sigma[nu][alpha][beta]))*std::conj(U_gauge[x][y][nu])*complex(delta_f(new_n_prime,n),0.0);
+    out -=0.5*(complex(1.0,0.0)-sigma[nu][alpha][beta])*std::conj(U_gauge[x][y][nu])*complex(delta_f(new_n_prime,n),0.0);
     new_n_prime = n_prime;
     new_n_prime[nu] = n_prime[nu]-1;
-    out -=0.5*(complex(1.0,0.0)+std::conj(sigma[nu][alpha][beta]))*U_gauge[(x_p)%L][(y_p-1+L)%L][nu]*complex(delta_f(new_n_prime,n),0.0);
+    out -=0.5*(complex(1.0,0.0)+sigma[nu][alpha][beta])*U_gauge[(x_p)%L][(y_p-1+L)%L][nu]*complex(delta_f(new_n_prime,n),0.0);
     
     return out;
 
@@ -199,7 +199,7 @@ std::vector<std::vector<std::vector<complex>>> f_Mdag(const std::vector<std::vec
                             n.push_back(x);
                             n.push_back(y);
 
-                            temp += fermion_dagger(U_gauge,n,n_prime,alpha,beta,m0)*Phi[x][y][beta];
+                            temp += fermion_dagger(U_gauge,n,n_prime,beta,alpha,m0)*Phi[x][y][beta];
 
                             n_prime.clear();n.clear();
                         }
@@ -219,33 +219,37 @@ std::vector<std::vector<std::vector<complex>>> f_M_f_Mdag(const std::vector<std:
     return f_M(f_Mdag(Phi,U_gauge,m0),U_gauge,m0);
 }
 
-double normsquared(const std::vector<std::vector<std::vector<complex>>> & psi){
+std::vector<double> normsquared(const std::vector<std::vector<std::vector<complex>>> & psi){
     int L = psi.size();
-    double norm = 0.0;
+    std::vector<double> normal;
+    double norm_x = 0.0;
+    double norm_y = 0.0;
     for(int x = 0;x<L;x++){
         for(int y = 0;y<L;y++){
-            for(int alpha = 0;alpha<2;alpha++){
-                norm += (psi[x][y][alpha]*std::conj(psi[x][y][alpha])).real();
+                norm_x += (psi[x][y][0]*std::conj(psi[x][y][0])).real();
+                norm_y += (psi[x][y][1]*std::conj(psi[x][y][1])).real();
             }
         }
-    }
-    return std::abs(norm);
+    normal.push_back(std::abs(norm_x));
+    normal.push_back(std::abs(norm_y));
+    
+    return normal;
 }
 
 std::vector<double> scalar_product(std::vector<std::vector<std::vector<complex>>> p, std::vector<std::vector<std::vector<complex>>> t){
     int L = p.size();
-    double x_dir = 0.0;
-    double y_dir = 0.0;
+    complex x_dir = complex(0.0,0.0);
+    complex y_dir = complex(0.0,0.0);
     std::vector<double> product;
     for(int x = 0;x<L;x++){
         for(int y = 0;y<L;y++){
-            x_dir += (p[x][y][0]*std::conj(t[x][y][0])).real();
-            y_dir += (p[x][y][1]*std::conj(t[x][y][1])).real();
+            x_dir += (std::conj(p[x][y][0])*t[x][y][0]);
+            y_dir += (std::conj(p[x][y][1])*t[x][y][1]);
         }
     }
 
-    product.push_back(x_dir);
-    product.push_back(y_dir);
+    product.push_back((x_dir).real());
+    product.push_back((y_dir).real());
     return product;
 }
 
@@ -275,13 +279,17 @@ void assign_mul_add(std::vector<std::vector<std::vector<complex>>> &p,const std:
 std::vector<std::vector<std::vector<complex>>> cg(const std::function< std::vector<std::vector<std::vector<complex>>>(const std::vector<std::vector<std::vector<complex>>> &,const std::vector<std::vector<std::vector<complex>>> &,const double) > & M, 
     std::vector<std::vector<std::vector<complex>>> & psi, const std::vector<std::vector<std::vector<complex>>> & U_gauge, double m0, size_t Max_Iterations, double epsilon){
 	
-    double rsqr, err;
+    std::vector<double> rsqr, err;
     std::vector<double> alpha;
     std::vector<double> beta;
+    std::vector<double> max_err;
+    std::vector<double> temp_sc_product;
     int L = psi.size();
 
 	// maximum norm squared of r for which the CG stops (remember stopping condition ||r{i}||/||psi|| < epsilon => (r{i},r{i}) < epsilon^2 * (psi,psi))
-	double max_err = std::pow(epsilon,2.0)*normsquared(psi);
+    max_err =normsquared(psi);
+	double max_err_x = std::pow(epsilon,2.0)*max_err[0];
+	double max_err_y = std::pow(epsilon,2.0)*max_err[1];
 
 	// vectors r,p,t,x have the same meaning as defined in lecture
     std::vector<std::vector<std::vector<complex>>> r(L,std::vector<std::vector<complex>>(L,std::vector<complex>(2)));
@@ -291,7 +299,7 @@ std::vector<std::vector<std::vector<complex>>> cg(const std::function< std::vect
     
 
     
-	//initial residual r{0} = psi - A * x{0} (x{0} = psi here)
+	//initial residual r{0} = psi - A * x{0} (x{0} = 0 here)
     r = psi;
 
 	// p{0} = r{0}
@@ -305,40 +313,45 @@ std::vector<std::vector<std::vector<complex>>> cg(const std::function< std::vect
     	t = M(p,U_gauge,m0);
 
     	//alpha{i} = (r{i},r{i})/(p{i},t{i}) (remember we stored (r{i},r{i}) in rsqr)
-    	alpha.push_back(rsqr/scalar_product(p,t)[0]);
-    	alpha.push_back(rsqr/scalar_product(p,t)[1]);
+        temp_sc_product = scalar_product(p,t);
+    	alpha.push_back(rsqr[0]/temp_sc_product[0]);
+    	alpha.push_back(rsqr[1]/temp_sc_product[1]);
 
     	// x{i+1} = x{i} + alpha{i} * p{i}
     	assign_add_mul(x,p,alpha);
 
     	// r{i+1} = r{i} - alpha{i} * t{i}
-        alpha[0] = -1*alpha[0];
-        alpha[1] = -1*alpha[1];
+        alpha[0] = -1.0*alpha[0];
+        alpha[1] = -1.0*alpha[1];
+
     	assign_add_mul(r,t,alpha);
 
     	// err = (r{i+1},r{i+1})
     	err = normsquared(r);
 
-		// std::cout << "Error[" << i << "] = " << err << std::endl;
+		 std::cout << "Error_x[" << i << "] = " << err[0]<< " Error_y: "<<err[1] << std::endl;
 
     	// check for convergence
-    	if(err < max_err) {
+    	if(err[0] < max_err_x && err[1] < max_err_y) {
     		std::cout << "Required Precision Reached: " << std::endl;
     		return x ;
     	}
 
     	// beta{i+1} = (r{i+1},r{i+1})/(r{i},r{i}) = err/rsqr
-    	beta.push_back(err/rsqr);
-    	beta.push_back(err/rsqr);
+    	beta.push_back(err[0]/rsqr[0]);
+    	beta.push_back(err[1]/rsqr[1]);
 
     	// p{i+1} = r{i+1} + beta{i+1} * p{i}
 		assign_mul_add(p,r,beta);
 
     	// ensure that rsqr is (r{i},r{i}) for the next iteration (i.e. i -> i+1)
     	rsqr = err;
+
+        alpha.clear();
+        beta.clear();
     }
 
-    throw std::runtime_error("Error: CG did not converged: Error = " + std::to_string(rsqr));
+    throw std::runtime_error("Error: CG did not converged: Error_x = " + std::to_string(rsqr[0])+"  Error_y = " + std::to_string(rsqr[1]));
 }
 
 
