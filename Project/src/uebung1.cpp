@@ -16,7 +16,7 @@ void creat_lattice(std::vector<std::vector<std::vector<complex>>> &lattice,int L
     for (int x=0;x<L;x++){
         for(int y=0;y<L;y++){
             for(int z=0;z<2;z++){
-                lattice[x][y][z] = std::exp(complex(dist(gen),dist(gen)));
+                lattice[x][y][z] = std::exp(complex(0.0,1.0)*dist(gen));
             }
         }
     }
@@ -28,7 +28,7 @@ void generate_Phi(std::vector<std::vector<std::vector<complex>>> & Phi,std::mt19
         for(int y = 0;y<L;y++){
             for(int z = 0;z<2;z++){
                 std::normal_distribution<double> dist(0.0,1.0);
-                Phi[x][y][z] = complex(dist(gen),dist(gen));
+                Phi[x][y][z] = dist(gen);
             }
         }
     }
@@ -46,7 +46,7 @@ complex plaquette(const std::vector<std::vector<std::vector<complex>>> &lattice,
     
 }
 
-complex g_plaquette(const std::vector<std::vector<std::vector<complex>>> &lattice,const double beta){
+double g_plaquette(const std::vector<std::vector<std::vector<complex>>> &lattice,const double beta){
 
     complex sum = 0;
     int N = lattice.size();
@@ -62,7 +62,7 @@ complex g_plaquette(const std::vector<std::vector<std::vector<complex>>> &lattic
 
     }
     sum = beta*(1-sum.real());
-    return sum;
+    return sum.real();
 }
 int delta_f(int n,int m){
     if (n==m){
@@ -93,18 +93,19 @@ complex fermion(const std::vector<std::vector<std::vector<complex>>> & U_gauge, 
     int x_p = n_prime[0];
     int y_p = n_prime[1];
     int mu = 0; int nu =1;
+
     auto new_n_prime = n_prime;
 
     out = complex((m0+2)*delta_f(alpha,beta)*delta_f(n_prime,n),0.0);
     new_n_prime[mu] = n_prime[mu]+1;
-    out -=0.5*(complex(1.0,0.0)-sigma[mu][alpha][beta])*U_gauge[x][y][mu]*complex(delta_f(new_n_prime,n),0.0);
+    out -=0.5*(complex(1.0,0.0)-sigma[mu][alpha][beta])*U_gauge[x_p][y_p][mu]*complex(delta_f(new_n_prime,n),0.0);
     new_n_prime = n_prime;
     new_n_prime[mu] = n_prime[mu]-1;
-    out -=0.5*(complex(1.0,0)+sigma[mu][alpha][beta])*std::conj(U_gauge[(x_p-1+L)%L][y_p][mu])*complex(delta_f(new_n_prime,n),0.0);
+    out -=0.5*(complex(1.0,0.0)+sigma[mu][alpha][beta])*std::conj(U_gauge[(x_p-1+L)%L][y_p][mu])*complex(delta_f(new_n_prime,n),0.0);
     
     new_n_prime = n_prime;
     new_n_prime[nu] = n_prime[nu]+1;
-    out -=0.5*(complex(1.0,0.0)-sigma[nu][alpha][beta])*U_gauge[x][y][nu]*complex(delta_f(new_n_prime,n),0.0);
+    out -=0.5*(complex(1.0,0.0)-sigma[nu][alpha][beta])*U_gauge[x_p][y_p][nu]*complex(delta_f(new_n_prime,n),0.0);
     new_n_prime = n_prime;
     new_n_prime[nu] = n_prime[nu]-1;
     out -=0.5*(complex(1.0,0.0)+sigma[nu][alpha][beta])*std::conj(U_gauge[(x_p)%L][(y_p-1+L)%L][nu])*complex(delta_f(new_n_prime,n),0.0);
@@ -130,18 +131,18 @@ complex fermion_dagger(const std::vector<std::vector<std::vector<complex>>> & U_
     auto new_n_prime = n_prime;
 
     out = complex((m0+2)*delta_f(alpha,beta)*delta_f(n_prime,n),0.0);
-
     new_n_prime[mu] = n_prime[mu]+1;
-    out -=0.5*(complex(1.0,0.0)-sigma[mu][alpha][beta])*std::conj(U_gauge[x][y][mu])*complex(delta_f(new_n_prime,n),0.0);
+    out -=0.5*(complex(1.0,0.0)-sigma[mu][alpha][beta])*std::conj(U_gauge[x_p][y_p][mu])*complex(delta_f(new_n_prime,n),0.0);
     new_n_prime = n_prime;
     new_n_prime[mu] = n_prime[mu]-1;
-    out -=0.5*(complex(1.0,0.0)+sigma[mu][alpha][beta])*U_gauge[(x_p-1+L)%L][y_p][mu]*complex(delta_f(new_n_prime,n),0.0);
+    out -=0.5*(complex(1.0,0.0)+sigma[mu][alpha][beta])*(U_gauge[(x_p-1+L)%L][y_p][mu])*complex(delta_f(new_n_prime,n),0.0);
+    
     new_n_prime = n_prime;
     new_n_prime[nu] = n_prime[nu]+1;
-    out -=0.5*(complex(1.0,0.0)-sigma[nu][alpha][beta])*std::conj(U_gauge[x][y][nu])*complex(delta_f(new_n_prime,n),0.0);
+    out -=0.5*(complex(1.0,0.0)-sigma[nu][alpha][beta])*std::conj(U_gauge[x_p][y_p][nu])*complex(delta_f(new_n_prime,n),0.0);
     new_n_prime = n_prime;
     new_n_prime[nu] = n_prime[nu]-1;
-    out -=0.5*(complex(1.0,0.0)+sigma[nu][alpha][beta])*U_gauge[(x_p)%L][(y_p-1+L)%L][nu]*complex(delta_f(new_n_prime,n),0.0);
+    out -=0.5*(complex(1.0,0.0)+sigma[nu][alpha][beta])*(U_gauge[(x_p)%L][(y_p-1+L)%L][nu])*complex(delta_f(new_n_prime,n),0.0);
     
     return out;
 
@@ -222,15 +223,14 @@ std::vector<std::vector<std::vector<complex>>> f_M_f_Mdag(const std::vector<std:
 std::vector<double> normsquared(const std::vector<std::vector<std::vector<complex>>> & psi){
     int L = psi.size();
     std::vector<double> normal;
-    double norm_x = 0.0;
+    complex norm_x = complex(0.0,0.0);
     double norm_y = 0.0;
     for(int x = 0;x<L;x++){
         for(int y = 0;y<L;y++){
-                norm_x += (psi[x][y][0]*std::conj(psi[x][y][0])).real();
-                norm_y += (psi[x][y][1]*std::conj(psi[x][y][1])).real();
+                norm_x += (psi[x][y][0]*std::conj(psi[x][y][0]) + psi[x][y][1]*std::conj(psi[x][y][1]));
             }
         }
-    normal.push_back(std::abs(norm_x));
+    normal.push_back(norm_x.real());
     normal.push_back(std::abs(norm_y));
     
     return normal;
@@ -243,8 +243,7 @@ std::vector<double> scalar_product(std::vector<std::vector<std::vector<complex>>
     std::vector<double> product;
     for(int x = 0;x<L;x++){
         for(int y = 0;y<L;y++){
-            x_dir += (std::conj(p[x][y][0])*t[x][y][0]);
-            y_dir += (std::conj(p[x][y][1])*t[x][y][1]);
+            x_dir += (std::conj(p[x][y][0])*t[x][y][0]) + (std::conj(p[x][y][1])*t[x][y][1]);
         }
     }
 
@@ -253,7 +252,7 @@ std::vector<double> scalar_product(std::vector<std::vector<std::vector<complex>>
     return product;
 }
 
-void assign_add_mul(std::vector<std::vector<std::vector<complex>>> &x,const std::vector<std::vector<std::vector<complex>>> &p,const std::vector<double> alpha){
+void assign_add_mul(std::vector<std::vector<std::vector<complex>>> &x,std::vector<std::vector<std::vector<complex>>> &p,const std::vector<double> alpha){
     int L = x.size();
     for(int x_p = 0;x_p<L;x_p++){
         for(int y_p = 0;y_p<L;y_p++){
@@ -264,7 +263,7 @@ void assign_add_mul(std::vector<std::vector<std::vector<complex>>> &x,const std:
 
 }
 
-void assign_mul_add(std::vector<std::vector<std::vector<complex>>> &p,const std::vector<std::vector<std::vector<complex>>> &r,const std::vector<double> beta){
+void assign_mul_add(std::vector<std::vector<std::vector<complex>>> &p, std::vector<std::vector<std::vector<complex>>> &r,const std::vector<double> beta){
     int L = p.size();
     for(int x_p = 0;x_p<L;x_p++){
         for(int y_p = 0;y_p<L;y_p++){ // p{i+1} = r{i+1} + beta{i+1} * p{i}
@@ -287,7 +286,7 @@ std::vector<std::vector<std::vector<complex>>> cg(const std::function< std::vect
     int L = psi.size();
 
 	// maximum norm squared of r for which the CG stops (remember stopping condition ||r{i}||/||psi|| < epsilon => (r{i},r{i}) < epsilon^2 * (psi,psi))
-    max_err =normsquared(psi);
+    max_err = normsquared(psi);
 	double max_err_x = std::pow(epsilon,2.0)*max_err[0];
 	double max_err_y = std::pow(epsilon,2.0)*max_err[1];
 
@@ -315,7 +314,7 @@ std::vector<std::vector<std::vector<complex>>> cg(const std::function< std::vect
     	//alpha{i} = (r{i},r{i})/(p{i},t{i}) (remember we stored (r{i},r{i}) in rsqr)
         temp_sc_product = scalar_product(p,t);
     	alpha.push_back(rsqr[0]/temp_sc_product[0]);
-    	alpha.push_back(rsqr[1]/temp_sc_product[1]);
+    	alpha.push_back(rsqr[0]/temp_sc_product[0]);
 
     	// x{i+1} = x{i} + alpha{i} * p{i}
     	assign_add_mul(x,p,alpha);
@@ -329,17 +328,17 @@ std::vector<std::vector<std::vector<complex>>> cg(const std::function< std::vect
     	// err = (r{i+1},r{i+1})
     	err = normsquared(r);
 
-		 std::cout << "Error_x[" << i << "] = " << err[0]<< " Error_y: "<<err[1] << std::endl;
+		 std::cout<< " Max_ Error_x,y << "<< max_err_x<<" , "<<max_err_y << "Error_x[" << i << "] = " << err[0]<< " Error_y: "<<err[1] << std::endl;
 
     	// check for convergence
-    	if(err[0] < max_err_x && err[1] < max_err_y) {
+    	if(err[0] <= max_err_x && err[1] <= max_err_y) {
     		std::cout << "Required Precision Reached: " << std::endl;
     		return x ;
     	}
 
     	// beta{i+1} = (r{i+1},r{i+1})/(r{i},r{i}) = err/rsqr
     	beta.push_back(err[0]/rsqr[0]);
-    	beta.push_back(err[1]/rsqr[1]);
+    	beta.push_back(err[0]/rsqr[0]);
 
     	// p{i+1} = r{i+1} + beta{i+1} * p{i}
 		assign_mul_add(p,r,beta);
@@ -353,6 +352,150 @@ std::vector<std::vector<std::vector<complex>>> cg(const std::function< std::vect
 
     throw std::runtime_error("Error: CG did not converged: Error_x = " + std::to_string(rsqr[0])+"  Error_y = " + std::to_string(rsqr[1]));
 }
+
+double schwinger_action(std::vector<std::vector<std::vector<complex>>> & psi, const std::vector<std::vector<std::vector<complex>>> & U_gauge,double beta,double m0){
+
+    double gauge_action = g_plaquette(U_gauge,beta);
+    int L = psi.size();
+    complex sum = complex(0.0,0.0);
+    std::vector<std::vector<std::vector<complex>>> M_Mdag_in = cg(f_M_f_Mdag,psi,U_gauge,m0,1000,1e-15);
+    for(int i = 0; i < L; i++){
+        for(int j = 0; j < L; j++){
+            for(int alpha = 0; alpha < 2; alpha++){
+
+                sum += std::conj(psi[i][j][alpha])*M_Mdag_in[i][j][alpha];
+            }
+        }
+    }
+    return gauge_action + sum.real();
+}
+
+double hamiltonian(std::vector<std::vector<std::vector<complex>>> & pi,
+    std::vector<std::vector<std::vector<complex>>> & psi, const std::vector<std::vector<std::vector<complex>>> & U_gauge,double beta,double m0){
+       double gauge_action = g_plaquette(U_gauge,beta);
+       std::vector<std::vector<std::vector<complex>>> phi = f_M(psi,U_gauge,m0);
+        std::vector<std::vector<std::vector<complex>>> inverse_matrix = cg(f_M_f_Mdag,phi,U_gauge,m0,1000,1e-15);
+
+
+    int L = psi.size();
+    complex sum = complex(0.0,0.0);
+    complex sum_2 = complex(0.0,0.0);
+        for(int i = 0; i < L; i++){
+            for(int j = 0; j < L; j++){
+                for(int alpha = 0; alpha < 2; alpha++){
+    
+                    sum += std::conj(pi[i][j][alpha])*pi[i][j][alpha]; // Pi^2
+                    sum_2 +=std::conj(psi[i][j][alpha])*inverse_matrix[i][j][alpha]; // Phi^+ (MM^+)^-1 Phi
+                }
+            }
+        }
+        return gauge_action + 0.5*sum.real() + sum_2.real();
+
+}
+
+std::vector<std::vector<std::vector<complex>>> g_force(const std::vector<std::vector<std::vector<complex>>> & U_gauge,double beta){
+    int L = U_gauge.size();
+    std::vector<std::vector<std::vector<complex>>> K(L,std::vector<std::vector<complex>>(L,std::vector<complex>(2)));
+
+    for(int i = 0; i < L; i++){
+        for(int j = 0; j < L; j++){
+            K[i][j][0]  = -beta*(U_gauge[i][j][0]*(U_gauge[(i+1)%L][j][1]*std::conj(U_gauge[i][(j+1)%L][0])*std::conj(U_gauge[i][j][1])+
+                            std::conj(U_gauge[(i+1)%L][(j-1+L)%L][1])*std::conj(U_gauge[i][(j-1+L)%L][0])*U_gauge[i][(j-1*L)%L][1])).imag();
+
+            K[i][j][1]  = -beta*(U_gauge[i][j][1]*(U_gauge[i][(j+1)%L][0]*std::conj(U_gauge[(i+1)%L][(j)%L][1])*std::conj(U_gauge[i][j][0])+
+                            std::conj(U_gauge[(i-1+L)%L][(j+1)%L][0])*std::conj(U_gauge[(i-1+L)%L][(j)%L][1])*U_gauge[(i-1+L)%L][(j)%L][0])).imag();
+        }
+    }
+            
+    return K;
+}
+
+
+std::vector<std::vector<std::vector<complex>>> f_force(std::vector<std::vector<std::vector<complex>>> & psi, const std::vector<std::vector<std::vector<complex>>> & U_gauge,double beta,double m0){
+    std::vector<std::vector<std::vector<complex>>> sigma(3,std::vector<std::vector<complex>>(2,std::vector<complex>(2)));
+    sigma[0] ={{{0.0,0.0},{1.0,0.0}},{{1.0,0.0},{0.0,0.0}}};
+    sigma[1] ={{{0.0,0.0},{0.0,-1.0}},{{0.0,1.0},{0.0,0.0}}};
+    sigma[2] ={{{1.0,0.0},{0.0,0.0}},{{0.0,0.0},{-1.0,0.0}}};
+    
+
+    int L = U_gauge.size();
+    std::vector<std::vector<std::vector<complex>>> gauge_force = g_force(U_gauge,beta);
+    std::vector<std::vector<std::vector<complex>>> F(L,std::vector<std::vector<complex>>(L,std::vector<complex>(2)));
+    std::vector<std::vector<std::vector<complex>>> chi = cg(f_M_f_Mdag,psi,U_gauge,m0,1000,1e-15);
+    std::vector<std::vector<std::vector<complex>>> xi = f_M(chi,U_gauge,m0);
+    complex temp;
+    complex temp_2;
+
+    for(int x =0; x<L;x++){
+        for(int y = 0; y < L; y++){
+            temp  = complex(0.0,0.0);
+            temp_2  = complex(0.0,0.0);
+            for(int alpha = 0; alpha < 2; alpha++){
+                for(int beta = 0; beta<2 ; beta++){
+                    temp += std::conj(chi[x][y][0])*(complex(1.0,.0)-sigma[0][alpha][beta])*U_gauge[x][y][0]*xi[(x+1)%L][y][0] 
+                    - std::conj(chi[(x+1)%L][y][0])*(complex(1.0,.0)+sigma[0][alpha][beta])*std::conj(U_gauge[x][y][0])*xi[(x)%L][y][0];
+
+
+                    temp_2 += std::conj(chi[x][y][1])*(complex(1.0,.0)-sigma[1][alpha][beta])*U_gauge[x][y][1]*xi[(x)%L][(y+1)%L][1] 
+                    - std::conj(chi[(x)%L][(y+1)%L][1])*(complex(1.0,.0)+sigma[1][alpha][beta])*std::conj(U_gauge[x][y][1])*xi[(x)%L][y][1];
+
+                }
+            }
+            F[x][y][0] = temp + gauge_force[x][y][0];
+            F[x][y][1] = temp_2 + gauge_force[x][y][1];
+        }
+
+    }
+    return F;
+
+}
+
+void leapfrog(double beta, double m0,std::vector<std::vector<std::vector<complex>>> phi,std::vector<std::vector<std::vector<complex>>>& init_gauge,std::vector<std::vector<std::vector<complex>>>& init_pi
+    ,int MD_steps=10,int MD_trajectory_length = 1, int MD_direction = 1){
+
+       double MD_step_size = MD_direction * MD_trajectory_length/MD_steps;
+       std::vector<std::vector<std::vector<complex>>> pi = init_pi;
+       std::vector<std::vector<std::vector<complex>>>  U = init_gauge;
+       int L = init_gauge.size();
+       std::vector<std::vector<std::vector<complex>>> force;
+       
+       for(int i = 0;i <L ;i++){
+        for(int j = 0; j < L; j++){
+            U[i][j][0] = U[i][j][0]*std::exp(0.5*complex(0.0,1.0)*MD_step_size*pi[i][j][0]);
+            U[i][j][1] = U[i][j][1]*std::exp(0.5*complex(0.0,1.0)*MD_step_size*pi[i][j][1]);
+        }
+       }
+    
+        for(int x = 1; x<MD_steps;x++){
+            force = f_force(phi,U,beta,m0);
+
+
+            for(int i = 0;i <L ;i++){
+                for(int j = 0; j < L; j++){
+                    pi[i][j][0] += MD_step_size*force[i][j][0];
+                    pi[i][j][1] += MD_step_size*force[i][j][1];
+
+                    if(x<MD_steps-1){
+                    U[i][j][0] *= std::exp(complex(.0,1.0)*MD_step_size*pi[i][j][0]);
+                    U[i][j][1] *= std::exp(complex(.0,1.0)*MD_step_size*pi[i][j][1]);
+                    }
+                    else{
+                        U[i][j][0] *= std::exp(0.5*complex(.0,1.0)*MD_step_size*pi[i][j][0]);
+                    U[i][j][1] *= std::exp(0.5*complex(.0,1.0)*MD_step_size*pi[i][j][1]);
+                    }
+                }
+            }
+        }
+
+        init_gauge = U;
+        init_pi = pi;
+
+}
+
+
+
+
+
 
 
 

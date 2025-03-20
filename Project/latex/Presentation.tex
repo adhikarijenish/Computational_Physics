@@ -13,6 +13,7 @@
 \usepackage{bbold}
 \usepackage{hyperref}
 \usepackage{cleveref}
+\usepackage{algorithm,algorithmic}
 \graphicspath{{Fig/}}
 \usetheme{Boadilla}
 \addbibresource{ref.bib}
@@ -67,20 +68,36 @@
   \end{frame}
 
   \begin{frame}{Path Integral}
-    \onslide<1>\begin{align*}
+    \onslide<1->\begin{align*}
         \braket{O} &= \frac{1}{Z}\int DA D\Psi D\Phi O(A,\Psi,\Phi)e^{-S(A,\Psi,\Phi)}\\
         \braket{O} &= \frac{1}{Z}\int DA D\Psi D\Phi [O(A) + \Psi O_{\Psi\Phi}(A)\Phi]e^{-S(A) - \Psi S_{\Psi\Phi}(A)\Phi}
     \end{align*}
     \onslide<2->\begin{align*}
         \braket{O} &= \frac{1}{Z}\int DA D\Psi D\Phi [O(A) + \Psi O_{\Psi\Phi}(A)\Phi]e^{-S(A)} e^{- \Psi S_{\Psi\Phi}(A)\Phi}
     \end{align*}
-    \onslide<3-> \begin{center} No idea \end{center}\begin{align*}
+    \onslide<3-> %\begin{center} No idea \end{center}
+    \begin{align*}
     \braket{O} &= \frac{1}{Z}\int DA e^{-S(A)}   \{ O(A)\det(S_{\Psi\Phi}(A)) -D[\Psi\Phi] \Psi O_{\Psi\Phi}(A)\Phi\Psi S_{\Psi\Phi}(A)\Phi\}
     \end{align*}
-    \onslide<4-> \begin{center} Lecture note \end{center}\begin{align}\label{eqn:lecturenote}
-        \braket{O} &= \frac{1}{Z}\int DA \det D_{\Psi}D_{\Phi} O_W(A)  e^{-S(A)}
+    \onslide<4-> %\begin{center} Lecture note \end{center}
+    \begin{align}\label{eqn:lecturenote}
+        \braket{O} &= \frac{1}{Z}\int DA \det D_{\Psi}D_{\Phi} O_W(A)  e^{-S(A)} \\
+        \det K &= \int D\eta^* D\eta e^{-\eta^\dagger K^{-1}\eta} \nonumber \\
+        \braket{O} &= \frac{1}{Z}\int DA D\eta^*D\eta O_W(A)  e^{-S(A) - \eta^\dagger (D_{\Psi}D_{\Phi})^{-1} \eta} 
     \end{align}
   \end{frame}
+
+  \begin{frame}
+    \onslide<1->
+    \begin{align}
+        \braket{O}_{\Psi,\Phi} &= \frac{1}{Z}\int DA D\Psi D\Phi O(A,\Psi,\Phi)e^{-S(A,\Psi,\Phi)}\nonumber\\ 
+        &= \frac{1}{Z}\int DA D\Psi D\Phi D\pi O(A,\Psi,\Phi)e^{\frac{1}{2}\pi^2 -S(A,\Psi,\Phi)}\nonumber\\
+        &= \braket{O}_{\Psi,\Phi,\pi}
+    \end{align}
+    \onslide<2-> \begin{align}
+        H = \frac{1}{2}\pi^2 -S(A,\Psi,\Phi)
+    \end{align}
+ \end{frame}
  
  \section{Discretization}
  \begin{frame}{Lattice}
@@ -136,6 +153,86 @@
  \end{frame}
 
 \begin{frame}
+    \onslide<1->\begin{equation}
+        S[\Psi,\Psi^{\dagger},A] = \int{d^4x \{\Psi^\dagger(x)\left[i\gamma^\mu\partial_\mu + e\gamma^\mu A_\mu(x) \right]\Psi(x) +\frac{1}{4} F_{\mu\nu}F^{\mu\nu}(x) \}} 
+    \end{equation}
+    \onslide<2->\begin{align}
+        H &= \frac{\pi^2}{2} + S_G(U) + \eta^\dagger (MM^\dagger)^{-1}\eta \\
+        \dot\pi & = - \diffp{H}{U} \\
+        \dot U &= \diffp{H}{U} = \pi \\ \end{align} \end{frame}
+
+\begin{frame}
+
+    \begin{equation}
+        \begin{gathered}
+        F_\mu(\textbf{n}) \equiv \frac{\partial \mathcal{H}(U,\pi)}{\partial \omega_{\mu}(\textbf{n})}
+                 = \\ F^{gauge}_{\mu}(\textbf{n})
+                 - \left( \left(M M^\dagger\right)^{-1} \Phi \right)^\dagger \cdot
+                 \left[ \frac{\partial M}{\partial \omega_{\mu}(\textbf{n})} M^\dagger + M\frac{\partial M^\dagger}{\partial \omega_{\mu}(\textbf{n})}\right] \cdot
+                 \left( \left(M M^\dagger\right)^{-1} \Phi \right)
+        \end{gathered}
+        \end{equation}
+        
+    \begin{align}
+        \diffp{S_G(U)}{U} =& - \beta \Im[U_\mu(n)K_\mu(n)]
+    \end{align}
+    \begin{align}
+        \diffp{S_f(U)}{U} = -& \beta \Im[\chi^\dagger(n)\cdot(1-\sigma_\mu)\cdot U_\mu(n)\xi(n+\mu) \\ 
+                            -&\chi^\dagger(n+\mu)\cdot (1+\sigma_\mu)\cdot U_\mu^\dagger(n)\xi(n)]\end{align}
+    
+\end{frame}
+\begin{frame}
+    \begin{center}
+        where
+    \end{center}
+    \begin{align}
+        K_{\mu}(n) = &U_{\nu}(n+\mu) \cdot U_{\mu}^\dagger(n+\nu) \cdot U_{\nu}^\dagger(n)  \\
+                    +& U_{\nu}^\dagger(n+\mu-\nu) \cdot U_{\mu}^\dagger(n-\nu) \cdot U_{\nu}(n-\nu)\vert_{\nu\neq\mu}
+    \end{align}
+    \begin{align}
+        \chi &= (MM^\dagger)^{-1}\Phi\\
+        \xi &= M^\dagger(MM^\dagger)^{-1}\Phi
+    \end{align}
+\end{frame}
+
+\begin{frame}{Symplectic integrators}
+    \begin{center} Leapfrog \end{center}
+    \begin{align}
+        r(t+\frac{\Delta t}{2}) &= r(t) + \frac{\Delta t}{2} p(t) \\
+        p(t+\Delta t) &= p(t) +\Delta t f\left(r(t+\frac{\Delta t}{2})\right) \\
+        r(t+\Delta t) &= r(t+\frac{\Delta t}{2}) + \frac{\Delta t}{2}p(t+\Delta t)
+    \end{align}
+    
+\end{frame}
+
+
+\begin{frame}{Hybrid Monte Carlo Algorithm}
+    \begin{itemize}
+       \item Generate random lattice: $U \sim \mathcal{N}(0,1)  $
+       \item \textbf{While} Sweeps $\leq  N $ \textbf{do:}
+        \begin{itemize}
+            \item Generate random momentum: $\pi \sim \mathcal{N}(0,1) $
+            \item Generate random state: $\chi \sim \mathcal{N}(0,1) $
+            \item Compute pseudofermion: $\phi = M \chi $
+            \item Compute inverse using CG-Algorithm
+            \item Compute Hamiltonian: $H(\phi,U,\pi)$
+            \item Compute proposal $U,\pi$ with leapfrog
+            \item Compute inverse using CG-Algorithm
+            \item Compute New\_Hamiltonian
+            \item Compute $\Delta H$
+       \end{itemize}
+       \item \textbf{If} $\Delta H \leq 0$ or $\mathcal{R}< e^{-\beta dE}$                                 $\mathcal{R} \in \mathcal{U}[0,1]$
+        \begin{itemize}
+            \item Accept state 
+            \item Compute observable
+            \item Compute acceptance rate
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+        
+
+
+\begin{frame}
     \begin{center}
         !!! Thank you for your attention !!!!
     \end{center}
@@ -145,4 +242,5 @@
 \begin{frame}[noframenumbering,plain,allowframebreaks]{Literatur}
     \printbibliography
 \end{frame}
+
 \end{document}
