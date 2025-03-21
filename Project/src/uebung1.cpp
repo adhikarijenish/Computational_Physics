@@ -28,6 +28,19 @@ void generate_Phi(std::vector<std::vector<std::vector<complex>>> & Phi,std::mt19
         for(int y = 0;y<L;y++){
             for(int z = 0;z<2;z++){
                 std::normal_distribution<double> dist(0.0,1.0);
+                Phi[x][y][z] = complex(dist(gen),1.0*dist(gen));
+            }
+        }
+    }
+
+}
+
+void generate_Pi(std::vector<std::vector<std::vector<complex>>> & Phi,std::mt19937 &gen){
+    int L = Phi.size();
+    for(int x = 0;x<L;x++){
+        for(int y = 0;y<L;y++){
+            for(int z = 0;z<2;z++){
+                std::normal_distribution<double> dist(0.0,1.0);
                 Phi[x][y][z] = dist(gen);
             }
         }
@@ -167,7 +180,7 @@ std::vector<std::vector<std::vector<complex>>> f_M(const std::vector<std::vector
                             n.push_back(x);
                             n.push_back(y);
 
-                            temp += fermion(U_gauge,n,n_prime,alpha,beta,m0)*Phi[x][y][beta];
+                            temp += fermion(U_gauge,n_prime,n,beta,alpha,m0)*Phi[x][y][beta];
 
                             n_prime.clear();n.clear();
                         }
@@ -210,7 +223,6 @@ std::vector<std::vector<std::vector<complex>>> f_Mdag(const std::vector<std::vec
             }
         }
     }
-
     return fermion_matrix;
     
 }
@@ -220,55 +232,45 @@ std::vector<std::vector<std::vector<complex>>> f_M_f_Mdag(const std::vector<std:
     return f_M(f_Mdag(Phi,U_gauge,m0),U_gauge,m0);
 }
 
-std::vector<double> normsquared(const std::vector<std::vector<std::vector<complex>>> & psi){
+double normsquared(const std::vector<std::vector<std::vector<complex>>> & psi){
     int L = psi.size();
-    std::vector<double> normal;
     complex norm_x = complex(0.0,0.0);
-    double norm_y = 0.0;
     for(int x = 0;x<L;x++){
         for(int y = 0;y<L;y++){
                 norm_x += (psi[x][y][0]*std::conj(psi[x][y][0]) + psi[x][y][1]*std::conj(psi[x][y][1]));
             }
         }
-    normal.push_back(norm_x.real());
-    normal.push_back(std::abs(norm_y));
-    
-    return normal;
+    return norm_x.real();
 }
 
-std::vector<double> scalar_product(std::vector<std::vector<std::vector<complex>>> p, std::vector<std::vector<std::vector<complex>>> t){
+double scalar_product(std::vector<std::vector<std::vector<complex>>> p, std::vector<std::vector<std::vector<complex>>> t){
     int L = p.size();
     complex x_dir = complex(0.0,0.0);
-    complex y_dir = complex(0.0,0.0);
-    std::vector<double> product;
     for(int x = 0;x<L;x++){
         for(int y = 0;y<L;y++){
             x_dir += (std::conj(p[x][y][0])*t[x][y][0]) + (std::conj(p[x][y][1])*t[x][y][1]);
         }
     }
-
-    product.push_back((x_dir).real());
-    product.push_back((y_dir).real());
-    return product;
+    return x_dir.real();
 }
 
-void assign_add_mul(std::vector<std::vector<std::vector<complex>>> &x,std::vector<std::vector<std::vector<complex>>> &p,const std::vector<double> alpha){
+void assign_add_mul(std::vector<std::vector<std::vector<complex>>> &x,std::vector<std::vector<std::vector<complex>>> &p,const double alpha){
     int L = x.size();
     for(int x_p = 0;x_p<L;x_p++){
         for(int y_p = 0;y_p<L;y_p++){
-            x[x_p][y_p][0] = x[x_p][y_p][0] + alpha[0]*p[x_p][y_p][0];
-            x[x_p][y_p][1] = x[x_p][y_p][1] + alpha[1]*p[x_p][y_p][1];
+            x[x_p][y_p][0] = x[x_p][y_p][0] + alpha*p[x_p][y_p][0];
+            x[x_p][y_p][1] = x[x_p][y_p][1] + alpha*p[x_p][y_p][1];
         }
     }
 
 }
 
-void assign_mul_add(std::vector<std::vector<std::vector<complex>>> &p, std::vector<std::vector<std::vector<complex>>> &r,const std::vector<double> beta){
+void assign_mul_add(std::vector<std::vector<std::vector<complex>>> &p, std::vector<std::vector<std::vector<complex>>> &r,const double beta){
     int L = p.size();
     for(int x_p = 0;x_p<L;x_p++){
         for(int y_p = 0;y_p<L;y_p++){ // p{i+1} = r{i+1} + beta{i+1} * p{i}
-            p[x_p][y_p][0] = r[x_p][y_p][0] + beta[0]*p[x_p][y_p][0];
-            p[x_p][y_p][1] = r[x_p][y_p][1] + beta[1]*p[x_p][y_p][1];
+            p[x_p][y_p][0] = r[x_p][y_p][0] + beta*p[x_p][y_p][0];
+            p[x_p][y_p][1] = r[x_p][y_p][1] + beta*p[x_p][y_p][1];
         }
     }
 
@@ -278,17 +280,16 @@ void assign_mul_add(std::vector<std::vector<std::vector<complex>>> &p, std::vect
 std::vector<std::vector<std::vector<complex>>> cg(const std::function< std::vector<std::vector<std::vector<complex>>>(const std::vector<std::vector<std::vector<complex>>> &,const std::vector<std::vector<std::vector<complex>>> &,const double) > & M, 
     std::vector<std::vector<std::vector<complex>>> & psi, const std::vector<std::vector<std::vector<complex>>> & U_gauge, double m0, size_t Max_Iterations, double epsilon){
 	
-    std::vector<double> rsqr, err;
-    std::vector<double> alpha;
-    std::vector<double> beta;
-    std::vector<double> max_err;
-    std::vector<double> temp_sc_product;
+    double rsqr, err;
+    double alpha;
+    double beta;
+    double max_err;
+    double temp_sc_product;
     int L = psi.size();
 
 	// maximum norm squared of r for which the CG stops (remember stopping condition ||r{i}||/||psi|| < epsilon => (r{i},r{i}) < epsilon^2 * (psi,psi))
     max_err = normsquared(psi);
-	double max_err_x = std::pow(epsilon,2.0)*max_err[0];
-	double max_err_y = std::pow(epsilon,2.0)*max_err[1];
+	max_err = std::pow(epsilon,2.0)*max_err;
 
 	// vectors r,p,t,x have the same meaning as defined in lecture
     std::vector<std::vector<std::vector<complex>>> r(L,std::vector<std::vector<complex>>(L,std::vector<complex>(2)));
@@ -313,44 +314,37 @@ std::vector<std::vector<std::vector<complex>>> cg(const std::function< std::vect
 
     	//alpha{i} = (r{i},r{i})/(p{i},t{i}) (remember we stored (r{i},r{i}) in rsqr)
         temp_sc_product = scalar_product(p,t);
-    	alpha.push_back(rsqr[0]/temp_sc_product[0]);
-    	alpha.push_back(rsqr[0]/temp_sc_product[0]);
+    	alpha = (rsqr/temp_sc_product);
 
     	// x{i+1} = x{i} + alpha{i} * p{i}
     	assign_add_mul(x,p,alpha);
 
     	// r{i+1} = r{i} - alpha{i} * t{i}
-        alpha[0] = -1.0*alpha[0];
-        alpha[1] = -1.0*alpha[1];
+        alpha = -1.0*alpha;
 
     	assign_add_mul(r,t,alpha);
 
     	// err = (r{i+1},r{i+1})
     	err = normsquared(r);
 
-		 std::cout<< " Max_ Error_x,y << "<< max_err_x<<" , "<<max_err_y << "Error_x[" << i << "] = " << err[0]<< " Error_y: "<<err[1] << std::endl;
+		// std::cout<< " Max_ Error<< "<< max_err << "Error_x[" << i << "] = " << err << std::endl;
 
     	// check for convergence
-    	if(err[0] <= max_err_x && err[1] <= max_err_y) {
-    		std::cout << "Required Precision Reached: " << std::endl;
+    	if(err <= max_err) {
+    		//std::cout << "Required Precision Reached: " << std::endl;
     		return x ;
     	}
 
     	// beta{i+1} = (r{i+1},r{i+1})/(r{i},r{i}) = err/rsqr
-    	beta.push_back(err[0]/rsqr[0]);
-    	beta.push_back(err[0]/rsqr[0]);
-
+    	beta = (err/rsqr);
     	// p{i+1} = r{i+1} + beta{i+1} * p{i}
 		assign_mul_add(p,r,beta);
 
     	// ensure that rsqr is (r{i},r{i}) for the next iteration (i.e. i -> i+1)
     	rsqr = err;
-
-        alpha.clear();
-        beta.clear();
     }
 
-    throw std::runtime_error("Error: CG did not converged: Error_x = " + std::to_string(rsqr[0])+"  Error_y = " + std::to_string(rsqr[1]));
+    throw std::runtime_error("Error: CG did not converged: Error = " + std::to_string(rsqr));
 }
 
 double schwinger_action(std::vector<std::vector<std::vector<complex>>> & psi, const std::vector<std::vector<std::vector<complex>>> & U_gauge,double beta,double m0){
@@ -372,9 +366,10 @@ double schwinger_action(std::vector<std::vector<std::vector<complex>>> & psi, co
 
 double hamiltonian(std::vector<std::vector<std::vector<complex>>> & pi,
     std::vector<std::vector<std::vector<complex>>> & psi, const std::vector<std::vector<std::vector<complex>>> & U_gauge,double beta,double m0){
-       double gauge_action = g_plaquette(U_gauge,beta);
-       std::vector<std::vector<std::vector<complex>>> phi = f_M(psi,U_gauge,m0);
-        std::vector<std::vector<std::vector<complex>>> inverse_matrix = cg(f_M_f_Mdag,phi,U_gauge,m0,1000,1e-15);
+    double gauge_action = g_plaquette(U_gauge,beta);
+    std::vector<std::vector<std::vector<complex>>> phi = f_M(psi,U_gauge,m0);
+    std::vector<std::vector<std::vector<complex>>> inverse_matrix = cg(f_M_f_Mdag,phi,U_gauge,m0,1000,1e-15);
+
 
 
     int L = psi.size();
@@ -385,7 +380,7 @@ double hamiltonian(std::vector<std::vector<std::vector<complex>>> & pi,
                 for(int alpha = 0; alpha < 2; alpha++){
     
                     sum += std::conj(pi[i][j][alpha])*pi[i][j][alpha]; // Pi^2
-                    sum_2 +=std::conj(psi[i][j][alpha])*inverse_matrix[i][j][alpha]; // Phi^+ (MM^+)^-1 Phi
+                    sum_2 +=std::conj(phi[i][j][alpha])*inverse_matrix[i][j][alpha]; // Phi^+ (MM^+)^-1 Phi
                 }
             }
         }
@@ -397,11 +392,13 @@ std::vector<std::vector<std::vector<complex>>> g_force(const std::vector<std::ve
     int L = U_gauge.size();
     std::vector<std::vector<std::vector<complex>>> K(L,std::vector<std::vector<complex>>(L,std::vector<complex>(2)));
 
+    
     for(int i = 0; i < L; i++){
         for(int j = 0; j < L; j++){
+            
             K[i][j][0]  = -beta*(U_gauge[i][j][0]*(U_gauge[(i+1)%L][j][1]*std::conj(U_gauge[i][(j+1)%L][0])*std::conj(U_gauge[i][j][1])+
-                            std::conj(U_gauge[(i+1)%L][(j-1+L)%L][1])*std::conj(U_gauge[i][(j-1+L)%L][0])*U_gauge[i][(j-1*L)%L][1])).imag();
-
+                            std::conj(U_gauge[(i+1)%L][(j-1+L)%L][1])*std::conj(U_gauge[i][(j-1+L)%L][0])*U_gauge[i][(j-1+L)%L][1])).imag();
+                            
             K[i][j][1]  = -beta*(U_gauge[i][j][1]*(U_gauge[i][(j+1)%L][0]*std::conj(U_gauge[(i+1)%L][(j)%L][1])*std::conj(U_gauge[i][j][0])+
                             std::conj(U_gauge[(i-1+L)%L][(j+1)%L][0])*std::conj(U_gauge[(i-1+L)%L][(j)%L][1])*U_gauge[(i-1+L)%L][(j)%L][0])).imag();
         }
@@ -410,8 +407,30 @@ std::vector<std::vector<std::vector<complex>>> g_force(const std::vector<std::ve
     return K;
 }
 
+complex anti_periodic(const std::vector<std::vector<std::vector<complex>>> & fermion, int t, int x, int increment, int mu){
+    complex out;
+    int L = fermion.size();
+    if (increment == 1){
+        if((t+1)%L==0){
+            out= -fermion[(t+1)%L][x][mu];
+        }
+        else{
+            out=  fermion[(t+1)%L][x][mu];
+        }
+    }
+    if (increment == -1){
+        if((t-1+L)%L == (L-1)){
+            out=  -fermion[(t-1+L)%L][x][mu];
+        }
+        else{
+            out=  fermion[(t-1+L)%L][x][mu];
+        }
+    }
+    return out;
+}
 
-std::vector<std::vector<std::vector<complex>>> f_force(std::vector<std::vector<std::vector<complex>>> & psi, const std::vector<std::vector<std::vector<complex>>> & U_gauge,double beta,double m0){
+
+std::vector<std::vector<std::vector<complex>>> f_force(std::vector<std::vector<std::vector<complex>>> & psi, const std::vector<std::vector<std::vector<complex>>> & U_gauge,double BETA,double m0){
     std::vector<std::vector<std::vector<complex>>> sigma(3,std::vector<std::vector<complex>>(2,std::vector<complex>(2)));
     sigma[0] ={{{0.0,0.0},{1.0,0.0}},{{1.0,0.0},{0.0,0.0}}};
     sigma[1] ={{{0.0,0.0},{0.0,-1.0}},{{0.0,1.0},{0.0,0.0}}};
@@ -419,8 +438,10 @@ std::vector<std::vector<std::vector<complex>>> f_force(std::vector<std::vector<s
     
 
     int L = U_gauge.size();
-    std::vector<std::vector<std::vector<complex>>> gauge_force = g_force(U_gauge,beta);
-    std::vector<std::vector<std::vector<complex>>> F(L,std::vector<std::vector<complex>>(L,std::vector<complex>(2)));
+
+    std::vector<std::vector<std::vector<complex>>> gauge_force = g_force(U_gauge,BETA);
+    std::vector<std::vector<std::vector<complex>>> F(L,std::vector<std::vector<complex>>(L,std::vector<complex>(2,complex(0.0,0.0))));
+    psi = f_M(psi,U_gauge,m0);
     std::vector<std::vector<std::vector<complex>>> chi = cg(f_M_f_Mdag,psi,U_gauge,m0,1000,1e-15);
     std::vector<std::vector<std::vector<complex>>> xi = f_M(chi,U_gauge,m0);
     complex temp;
@@ -432,8 +453,10 @@ std::vector<std::vector<std::vector<complex>>> f_force(std::vector<std::vector<s
             temp_2  = complex(0.0,0.0);
             for(int alpha = 0; alpha < 2; alpha++){
                 for(int beta = 0; beta<2 ; beta++){
-                    temp += std::conj(chi[x][y][0])*(complex(1.0,.0)-sigma[0][alpha][beta])*U_gauge[x][y][0]*xi[(x+1)%L][y][0] 
-                    - std::conj(chi[(x+1)%L][y][0])*(complex(1.0,.0)+sigma[0][alpha][beta])*std::conj(U_gauge[x][y][0])*xi[(x)%L][y][0];
+                    temp += std::conj(chi[x][y][0])*(complex(1.0,.0)-sigma[0][alpha][beta])*U_gauge[x][y][0]*
+                    anti_periodic(xi,x,y,1,0)  //xi[(x+1)%L][y][0] 
+                    - std::conj(anti_periodic(xi,x,y,1,0)) //  chi[(x+1)%L][y][0])
+                    *(complex(1.0,.0)+sigma[0][alpha][beta])*std::conj(U_gauge[x][y][0])*xi[(x)%L][y][0];
 
 
                     temp_2 += std::conj(chi[x][y][1])*(complex(1.0,.0)-sigma[1][alpha][beta])*U_gauge[x][y][1]*xi[(x)%L][(y+1)%L][1] 
@@ -441,8 +464,8 @@ std::vector<std::vector<std::vector<complex>>> f_force(std::vector<std::vector<s
 
                 }
             }
-            F[x][y][0] = temp + gauge_force[x][y][0];
-            F[x][y][1] = temp_2 + gauge_force[x][y][1];
+            F[x][y][0] = - (temp).imag() + gauge_force[x][y][0];
+            F[x][y][1] = - (temp_2).imag() + gauge_force[x][y][1];
         }
 
     }
@@ -451,7 +474,7 @@ std::vector<std::vector<std::vector<complex>>> f_force(std::vector<std::vector<s
 }
 
 void leapfrog(double beta, double m0,std::vector<std::vector<std::vector<complex>>> phi,std::vector<std::vector<std::vector<complex>>>& init_gauge,std::vector<std::vector<std::vector<complex>>>& init_pi
-    ,int MD_steps=10,int MD_trajectory_length = 1, int MD_direction = 1){
+    ,int MD_steps,int MD_trajectory_length, int MD_direction){
 
        double MD_step_size = MD_direction * MD_trajectory_length/MD_steps;
        std::vector<std::vector<std::vector<complex>>> pi = init_pi;
@@ -459,10 +482,12 @@ void leapfrog(double beta, double m0,std::vector<std::vector<std::vector<complex
        int L = init_gauge.size();
        std::vector<std::vector<std::vector<complex>>> force;
        
+     
+        // U' = e^(i/2*dt*P)*U
        for(int i = 0;i <L ;i++){
         for(int j = 0; j < L; j++){
-            U[i][j][0] = U[i][j][0]*std::exp(0.5*complex(0.0,1.0)*MD_step_size*pi[i][j][0]);
-            U[i][j][1] = U[i][j][1]*std::exp(0.5*complex(0.0,1.0)*MD_step_size*pi[i][j][1]);
+            U[i][j][0] = U[i][j][0]*std::exp(0.5*MD_step_size*pi[i][j][0]);
+            U[i][j][1] = U[i][j][1]*std::exp(0.5*MD_step_size*pi[i][j][1]);
         }
        }
     
@@ -472,16 +497,16 @@ void leapfrog(double beta, double m0,std::vector<std::vector<std::vector<complex
 
             for(int i = 0;i <L ;i++){
                 for(int j = 0; j < L; j++){
-                    pi[i][j][0] += MD_step_size*force[i][j][0];
-                    pi[i][j][1] += MD_step_size*force[i][j][1];
+                    pi[i][j][0] -= MD_step_size*force[i][j][0].real();
+                    pi[i][j][1] -= MD_step_size*force[i][j][1].real();
 
                     if(x<MD_steps-1){
-                    U[i][j][0] *= std::exp(complex(.0,1.0)*MD_step_size*pi[i][j][0]);
-                    U[i][j][1] *= std::exp(complex(.0,1.0)*MD_step_size*pi[i][j][1]);
+                    U[i][j][0] *= std::exp(MD_step_size*pi[i][j][0]);
+                    U[i][j][1] *= std::exp(MD_step_size*pi[i][j][1]);
                     }
                     else{
-                        U[i][j][0] *= std::exp(0.5*complex(.0,1.0)*MD_step_size*pi[i][j][0]);
-                    U[i][j][1] *= std::exp(0.5*complex(.0,1.0)*MD_step_size*pi[i][j][1]);
+                        U[i][j][0] *= std::exp(0.5*MD_step_size*pi[i][j][0]);
+                        U[i][j][1] *= std::exp(0.5*MD_step_size*pi[i][j][1]);
                     }
                 }
             }
@@ -492,13 +517,52 @@ void leapfrog(double beta, double m0,std::vector<std::vector<std::vector<complex
 
 }
 
+void HMC(std::vector<std::vector<std::vector<complex>>>& U_gauge, int configs, int MD_steps,int MD_trajectory_length,std::mt19937 & gen, double beta,double m0 ){
+    int L = U_gauge.size();
+    int MD_direction =1;
+    std::vector<std::vector<std::vector<complex>>> init_pi(L,std::vector<std::vector<complex>>(L,std::vector<complex>(2)));
+    std::vector<std::vector<std::vector<complex>>> init_phi(L,std::vector<std::vector<complex>>(L,std::vector<complex>(2)));
+    std::vector<std::vector<std::vector<complex>>> New_gauge;
+    std::vector<std::vector<std::vector<complex>>> New_pi(L,std::vector<std::vector<complex>>(L,std::vector<complex>(2)));
+
+    double H_old;
+    double H_new;
+    double dH;
+    double random_num;
+    std::uniform_real_distribution<double> dist(0.0,1.0);
+    int acceptence =0;
+    int rejected =0;
+    std::cout<< g_plaquette(U_gauge,beta)<< "\n";
 
 
+    for(int i =0;i<configs;i++){
+        
+        generate_Pi(init_pi,gen);
+        generate_Phi(init_phi,gen);
+        H_old = hamiltonian(init_pi,init_phi,U_gauge,beta,m0);
+        New_gauge = U_gauge;
+        New_pi = init_pi;
+        leapfrog(beta,m0,init_phi,New_gauge, New_pi,MD_steps,MD_trajectory_length,MD_direction);
+        H_new = hamiltonian(New_pi,init_phi,New_gauge,beta,m0);
+        dH = H_new - H_old;
+        std::cout << H_new<<" "<< H_old << " \n";
+        random_num = dist(gen);
+        if(random_num < std::min(1.0, std::exp(-dH))){
+            acceptence++;
+            init_pi = New_pi;
+            U_gauge = New_gauge;
+            std::cout<< g_plaquette(U_gauge,beta)<< "\n";
 
 
+        }
+        else{
+            rejected++;
+            std::cout<<"Rejected :("<<rejected << "\n";
+        }
+        
+    }
 
-
-
+}
 
 void GetUserParam( int argc, char *argv[],std::string & filename, int & Pairs, int & X, bool & save){
 
